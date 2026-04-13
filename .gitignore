@@ -31,5 +31,6 @@ terraform/terraform.tfvars
 # OS
 .DS_Store
 
-# Claude config — tracked in git, copied into image at build time
-# .devcontainer/claude-config/
+# Claude config is baked into the Docker image at build time
+# but don't track the copied source in git
+.devcontainer/claude-config/
