@@ -61,7 +61,7 @@ def load_corpus(path: Path) -> tuple[list[dict], int]:
     """Load JSONL corpus file. Returns (records, parse_error_count)."""
     records = []
     parse_errors = 0
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
             if not line:

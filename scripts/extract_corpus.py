@@ -68,7 +68,7 @@ def fetch_crawl_json(local_path: str | None = None) -> dict:
     """Return parsed crawl JSON, either from a local file or via gh api."""
     if local_path:
         print(f"Loading crawl data from local file: {local_path}")
-        with open(local_path) as f:
+        with open(local_path, encoding="utf-8") as f:
             return json.load(f)
 
     print(f"Fetching crawl data from {REPO}/{CRAWL_PATH} via gh api ...")
@@ -290,7 +290,7 @@ def main() -> None:
 
     # Write JSONL
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    with open(OUTPUT_FILE, "w") as f:
+    with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         for rec in records:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
