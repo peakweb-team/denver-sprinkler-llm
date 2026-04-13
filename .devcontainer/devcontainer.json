@@ -15,9 +15,12 @@
     },
     "AWS_SECRET_ACCESS_KEY": {
       "description": "AWS secret key for Terraform and S3"
+    },
+    "GH_TOKEN": {
+      "description": "GitHub PAT (fine-grained, scoped to peakweb-team org) for gh CLI — enables autonomous PR creation, issue comments, and branch pushes"
     }
   },
-  "postCreateCommand": "echo '✅ Container ready. Run: claude --dangerously-skip-permissions'",
+  "postCreateCommand": "gh auth status 2>/dev/null || echo '⚠️  Run: gh auth login (or set GH_TOKEN env var)' && echo '✅ Container ready. Run: claude --dangerously-skip-permissions'",
   "customizations": {
     "vscode": {
       "extensions": [

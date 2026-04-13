@@ -13,6 +13,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     unzip \
     && rm -rf /var/lib/apt/lists/*
 
+# GitHub CLI (for gh issue, gh pr, etc.)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+    && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      > /etc/apt/sources.list.d/github-cli.list \
+    && apt-get update && apt-get install -y gh \
+    && rm -rf /var/lib/apt/lists/*
+
 # AWS CLI v2
 RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
     && unzip -q /tmp/awscliv2.zip -d /tmp \
@@ -36,5 +44,9 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     uvicorn[standard] \
     httpx \
     anthropic
+
+# Claude Code agent personas and skills
+# Copied from host at build time — mount updated versions at runtime if needed
+COPY claude-config/ /root/.claude/
 
 WORKDIR /workspace
