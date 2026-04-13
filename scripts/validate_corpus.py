@@ -25,7 +25,7 @@ from pathlib import Path
 # ---------------------------------------------------------------------------
 DEFAULT_CORPUS = Path(__file__).resolve().parent.parent / "data" / "site-corpus.jsonl"
 
-EXPECTED_MIN_PAGES = 60
+EXPECTED_MIN_PAGES = 56
 EXPECTED_MAX_PAGES = 65
 VALID_CATEGORIES = {"service", "city", "info"}
 
@@ -175,13 +175,64 @@ def validate(corpus_path: Path) -> bool:
 
     # --- Check 7: No duplicate pages ---
     total_checks += 1
-    page_paths = [r["page"] for r in records]
-    dupes = [p for p in page_paths if page_paths.count(p) > 1]
+    page_set = set()
+    dupes = set()
+    for r in records:
+        p = r["page"]
+        if p in page_set:
+            dupes.add(p)
+        page_set.add(p)
     if not dupes:
         print(f"  PASS: No duplicate page paths")
         passed_checks += 1
     else:
-        print(f"  FAIL: Duplicate page paths: {set(dupes)}")
+        print(f"  FAIL: Duplicate page paths: {dupes}")
+        all_passed = False
+
+    # --- Check 8: No nav menu text leaks ---
+    total_checks += 1
+    nav_pattern = re.compile(r"HOME\s+SERVICES\s+LANDSCAPING", re.IGNORECASE)
+    nav_leaks = [r["page"] for r in records if nav_pattern.search(r.get("content", ""))]
+    if not nav_leaks:
+        print(f"  PASS: No navigation menu text detected in content")
+        passed_checks += 1
+    else:
+        print(f"  FAIL: Navigation menu text found in {len(nav_leaks)} pages:")
+        for p in nav_leaks[:5]:
+            print(f"         {p}")
+        all_passed = False
+
+    # --- Check 9: No copyright footer text leaks ---
+    total_checks += 1
+    copyright_pattern = re.compile(
+        r"Denver Sprinkler and Landscape Inc\s*\||[\u00a9]", re.IGNORECASE
+    )
+    copyright_leaks = [r["page"] for r in records if copyright_pattern.search(r.get("content", ""))]
+    if not copyright_leaks:
+        print(f"  PASS: No copyright footer text detected in content")
+        passed_checks += 1
+    else:
+        print(f"  FAIL: Copyright footer text found in {len(copyright_leaks)} pages:")
+        for p in copyright_leaks[:5]:
+            print(f"         {p}")
+        all_passed = False
+
+    # --- Check 10: No raw footer address blocks ---
+    total_checks += 1
+    # Match footer address blocks that start directly with "Address" (not
+    # legitimate content like the contact page's "Get In Touch Address...")
+    footer_addr_pattern = re.compile(
+        r"(?:^|\n)Address\s*3971 S Decatur",
+        re.IGNORECASE | re.MULTILINE,
+    )
+    addr_leaks = [r["page"] for r in records if footer_addr_pattern.search(r.get("content", ""))]
+    if not addr_leaks:
+        print(f"  PASS: No raw footer address blocks detected in content")
+        passed_checks += 1
+    else:
+        print(f"  FAIL: Footer address blocks found in {len(addr_leaks)} pages:")
+        for p in addr_leaks[:5]:
+            print(f"         {p}")
         all_passed = False
 
     # --- Summary ---

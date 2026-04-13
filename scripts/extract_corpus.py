@@ -42,6 +42,20 @@ BLOG_CATEGORIES = {
     "brick-pavers", "retaining-walls", "sprinkler-repair",
 }
 
+# Blocklist patterns: sections matching any of these are considered shared
+# chrome (nav, footer, copyright) and should be excluded regardless of
+# frequency threshold.
+BLOCKLIST_PATTERNS = [
+    # Nav menu text (contains the full site navigation)
+    re.compile(r"HOME\s+SERVICES\s+LANDSCAPING", re.IGNORECASE),
+    # Copyright footer
+    re.compile(r"Denver Sprinkler and Landscape Inc\s*\|", re.IGNORECASE),
+    re.compile(r"\u00a9"),  # copyright symbol ©
+    # Footer address block — starts directly with "Address" (not "Get In Touch")
+    # The contact page's "Get In Touch Address..." section is legitimate content
+    re.compile(r"^Address\s*3971 S Decatur", re.IGNORECASE),
+]
+
 # ---------------------------------------------------------------------------
 # Data loading
 # ---------------------------------------------------------------------------
@@ -158,9 +172,18 @@ def categorize_page(path: str) -> str:
 # Content extraction
 # ---------------------------------------------------------------------------
 
+def is_blocklisted(text: str) -> bool:
+    """Return True if text matches any blocklist pattern (nav/footer/copyright)."""
+    for pattern in BLOCKLIST_PATTERNS:
+        if pattern.search(text):
+            return True
+    return False
+
+
 def extract_page_content(page: dict, shared_keys: set[str]) -> str:
     """Extract unique page content, filtering out shared sections."""
     parts: list[str] = []
+    seen_texts: set[str] = set()  # for intra-page deduplication
 
     # Include h1 as the top heading
     h1_list = page.get("h1", [])
@@ -177,6 +200,13 @@ def extract_page_content(page: dict, shared_keys: set[str]) -> str:
         # Skip nav elements (they contain menu items)
         if section.get("tag") == "nav":
             continue
+        # Skip sections matching blocklist patterns
+        if is_blocklisted(text):
+            continue
+        # Intra-page deduplication: skip if we already saw this text block
+        if key in seen_texts:
+            continue
+        seen_texts.add(key)
         parts.append(text)
 
     return "\n\n".join(parts)
@@ -210,11 +240,19 @@ def main() -> None:
     print(f"Shared sections identified (>{SHARED_THRESHOLD*100:.0f}% threshold): {len(shared_keys)}")
 
     records = []
+    skipped_empty = 0
     for page in pages:
         path = page["canonicalPath"]
         title = clean_title(page.get("title", "") or "")
         content = extract_page_content(page, shared_keys)
         category = categorize_page(path)
+
+        # Skip pages that have no content after shared/blocklist filtering
+        # (e.g., blog category index pages that only contain nav chrome)
+        if not content.strip():
+            skipped_empty += 1
+            print(f"  Skipping {path} (no content after filtering)")
+            continue
 
         records.append({
             "page": path,
