@@ -57,6 +57,25 @@ claude --dangerously-skip-permissions
 # Follow the OAuth flow to sign in
 ```
 
+### Site Corpus Extraction
+
+The training corpus is built from the site's crawl data (`docs/crawl-raw.json` in `peakweb-team/denver-sprinkler`).
+
+**Pipeline:**
+1. `scripts/extract_corpus.py` fetches crawl JSON via GitHub API (or accepts a local file path)
+2. Filters out PDFs (status 0) and deduplicates trailing-slash URL variants
+3. Builds a frequency map of section texts; sections appearing on >50% of pages are classified as shared content (nav, header bar, footer, copyright) and removed
+4. Extracts unique page content preserving heading structure (h1 + section text)
+5. Categorizes pages by URL pattern: `service` (Denver-specific service pages), `city` (city landing pages for Littleton, Lakewood, etc.), `info` (about, contact, blog posts, testimonials)
+6. Outputs JSONL to `data/site-corpus.jsonl`
+
+**Validation:** `scripts/validate_corpus.py` checks page count, empty content, JSX/HTML artifacts, business detail accuracy, and content quality metrics.
+
+**Schema:** Each line in `data/site-corpus.jsonl` is:
+```json
+{ "page": "/path/", "title": "Page Title", "content": "# Heading\n\nBody text...", "category": "service|city|info" }
+```
+
 ### Project Milestones
 
 See [GitHub Milestones](https://github.com/peakweb-team/denver-sprinkler-llm/milestones) for the full roadmap.
