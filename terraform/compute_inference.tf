@@ -13,6 +13,12 @@ resource "aws_instance" "inference" {
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.ssh_key_name != "" ? var.ssh_key_name : null
 
+  metadata_options {
+    http_tokens                 = "required"
+    http_endpoint               = "enabled"
+    http_put_response_hop_limit = 1
+  }
+
   root_block_device {
     volume_size = 30
     volume_type = "gp3"
