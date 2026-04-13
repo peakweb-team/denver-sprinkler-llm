@@ -65,7 +65,7 @@ The training corpus is built from the site's crawl data (`docs/crawl-raw.json` i
 1. `scripts/extract_corpus.py` fetches crawl JSON via GitHub API (or accepts a local file path)
 2. Filters out PDFs (status 0) and deduplicates trailing-slash URL variants
 3. Builds a frequency map of section texts; sections appearing on >50% of pages are classified as shared content (nav, header bar, footer, copyright) and removed
-4. Extracts unique page content preserving heading structure (h1 + section text)
+4. Extracts unique page content preserving heading structure (h1/h2/h3 + section text)
 5. Categorizes pages by URL pattern: `service` (Denver-specific service pages), `city` (city landing pages for Littleton, Lakewood, etc.), `info` (about, contact, blog posts, testimonials)
 6. Outputs JSONL to `data/site-corpus.jsonl`
 
@@ -76,6 +76,32 @@ The training corpus is built from the site's crawl data (`docs/crawl-raw.json` i
 { "page": "/path/", "title": "Page Title", "content": "# Heading\n\nBody text...", "category": "service|city|info" }
 ```
 
+### AWS Infrastructure (Terraform)
+
+The `terraform/` directory contains POC-grade AWS infrastructure:
+
+```bash
+cd terraform/
+terraform init
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your S3 bucket name and alert email
+terraform plan
+terraform apply
+```
+
+**AWS credentials** must be set before running Terraform:
+```bash
+export AWS_ACCESS_KEY_ID="your-key"
+export AWS_SECRET_ACCESS_KEY="your-secret"
+```
+
+Compute instances are **off by default** to avoid costs. Enable with:
+```bash
+terraform apply -var="launch_inference=true"   # Start inference server
+terraform apply -var="launch_training=true"     # Start training instance
+```
+
+See [`terraform/README.md`](terraform/README.md) for full details and cost estimates.
 ### Project Milestones
 
 See [GitHub Milestones](https://github.com/peakweb-team/denver-sprinkler-llm/milestones) for the full roadmap.
