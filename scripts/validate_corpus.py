@@ -109,6 +109,12 @@ def validate(corpus_path: Path) -> bool:
     # --- Check 2: Required fields ---
     total_checks += 1
     missing_fields = []
+    non_dict_count = sum(1 for rec in records if not isinstance(rec, dict))
+    if non_dict_count:
+        print(f"  FAIL: {non_dict_count} record(s) are not JSON objects")
+        all_passed = False
+        print(f"\nResults: {passed_checks}/{total_checks} checks passed\nVALIDATION FAILED (non-object records — cannot continue)")
+        return False
     for rec in records:
         for field in ("page", "title", "content", "category"):
             if field not in rec:
@@ -128,7 +134,7 @@ def validate(corpus_path: Path) -> bool:
     total_checks += 1
     empty = [r["page"] for r in records if not r.get("content", "").strip()]
     if not empty:
-        print(f"  PASS: No empty content fields")
+        print("  PASS: No empty content fields")
         passed_checks += 1
     else:
         print(f"  FAIL: {len(empty)} pages with empty content:")
@@ -147,7 +153,7 @@ def validate(corpus_path: Path) -> bool:
         print(f"  PASS: All categories valid ({cats})")
         passed_checks += 1
     else:
-        print(f"  FAIL: Invalid categories:")
+        print("  FAIL: Invalid categories:")
         for page, cat in invalid_cats:
             print(f"         {page}: '{cat}'")
         all_passed = False
@@ -162,7 +168,7 @@ def validate(corpus_path: Path) -> bool:
                 artifact_hits.append((rec["page"], label))
                 break  # one per page is enough
     if not artifact_hits:
-        print(f"  PASS: No JSX/HTML artifacts detected")
+        print("  PASS: No JSX/HTML artifacts detected")
         passed_checks += 1
     else:
         print(f"  FAIL: JSX/HTML artifacts found in {len(artifact_hits)} pages:")
@@ -178,10 +184,10 @@ def validate(corpus_path: Path) -> bool:
         if value.lower() not in all_content.lower():
             missing_biz.append((label, value))
     if not missing_biz:
-        print(f"  PASS: All business details found in corpus")
+        print("  PASS: All business details found in corpus")
         passed_checks += 1
     else:
-        print(f"  FAIL: Missing business details:")
+        print("  FAIL: Missing business details:")
         for label, value in missing_biz:
             print(f"         {label}: '{value}' not found")
         all_passed = False
@@ -196,7 +202,7 @@ def validate(corpus_path: Path) -> bool:
             dupes.add(p)
         page_set.add(p)
     if not dupes:
-        print(f"  PASS: No duplicate page paths")
+        print("  PASS: No duplicate page paths")
         passed_checks += 1
     else:
         print(f"  FAIL: Duplicate page paths: {dupes}")
@@ -207,7 +213,7 @@ def validate(corpus_path: Path) -> bool:
     nav_pattern = re.compile(r"HOME\s+SERVICES\s+LANDSCAPING", re.IGNORECASE)
     nav_leaks = [r["page"] for r in records if nav_pattern.search(r.get("content", ""))]
     if not nav_leaks:
-        print(f"  PASS: No navigation menu text detected in content")
+        print("  PASS: No navigation menu text detected in content")
         passed_checks += 1
     else:
         print(f"  FAIL: Navigation menu text found in {len(nav_leaks)} pages:")
@@ -222,7 +228,7 @@ def validate(corpus_path: Path) -> bool:
     )
     copyright_leaks = [r["page"] for r in records if copyright_pattern.search(r.get("content", ""))]
     if not copyright_leaks:
-        print(f"  PASS: No copyright footer text detected in content")
+        print("  PASS: No copyright footer text detected in content")
         passed_checks += 1
     else:
         print(f"  FAIL: Copyright footer text found in {len(copyright_leaks)} pages:")
@@ -240,7 +246,7 @@ def validate(corpus_path: Path) -> bool:
     )
     addr_leaks = [r["page"] for r in records if footer_addr_pattern.search(r.get("content", ""))]
     if not addr_leaks:
-        print(f"  PASS: No raw footer address blocks detected in content")
+        print("  PASS: No raw footer address blocks detected in content")
         passed_checks += 1
     else:
         print(f"  FAIL: Footer address blocks found in {len(addr_leaks)} pages:")
@@ -256,7 +262,7 @@ def validate(corpus_path: Path) -> bool:
     )
     cta_leaks = [r["page"] for r in records if cta_pattern.search(r.get("content", ""))]
     if not cta_leaks:
-        print(f"  PASS: No shared 'Get In Touch With Us' CTA block detected in content")
+        print("  PASS: No shared 'Get In Touch With Us' CTA block detected in content")
         passed_checks += 1
     else:
         print(f"  FAIL: Shared CTA block found in {len(cta_leaks)} pages:")
@@ -271,7 +277,7 @@ def validate(corpus_path: Path) -> bool:
     # Content quality metrics
     if records:
         lengths = [len(r["content"]) for r in records]
-        print(f"\nContent metrics:")
+        print("\nContent metrics:")
         print(f"  Total pages: {len(records)}")
         print(f"  Average content length: {sum(lengths)/len(lengths):.0f} chars")
         print(f"  Min content length: {min(lengths)} chars ({[r['page'] for r in records if len(r['content'])==min(lengths)][0]})")
@@ -283,9 +289,9 @@ def validate(corpus_path: Path) -> bool:
                 print(f"           {p}")
 
     if all_passed:
-        print(f"\nVALIDATION PASSED")
+        print("\nVALIDATION PASSED")
     else:
-        print(f"\nVALIDATION FAILED")
+        print("\nVALIDATION FAILED")
 
     return all_passed
 

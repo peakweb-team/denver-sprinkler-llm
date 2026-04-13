@@ -79,7 +79,7 @@ def fetch_crawl_json(local_path: str | None = None) -> dict:
                 f"repos/{REPO}/contents/{CRAWL_PATH}",
                 "-H", "Accept: application/vnd.github.raw+json",
             ],
-            capture_output=True, text=True, check=True,
+            capture_output=True, text=True, check=True, timeout=30,
         )
     except FileNotFoundError as exc:
         raise SystemExit(
@@ -90,6 +90,11 @@ def fetch_crawl_json(local_path: str | None = None) -> dict:
         raise SystemExit(
             f"Failed to fetch {REPO}/{CRAWL_PATH} via `gh api`: {stderr}\n"
             "Run `gh auth status` or pass a local crawl.json path."
+        ) from exc
+    except subprocess.TimeoutExpired as exc:
+        raise SystemExit(
+            f"`gh api` timed out while fetching {REPO}/{CRAWL_PATH}. "
+            "Check network/auth (`gh auth status`) or use a local crawl.json path."
         ) from exc
     return json.loads(result.stdout)
 
@@ -200,10 +205,14 @@ def extract_page_content(page: dict, shared_keys: set[str]) -> str:
     parts: list[str] = []
     seen_texts: set[str] = set()  # for intra-page deduplication
 
-    # Include h1 as the top heading
+    # Include heading hierarchy
     h1_list = page.get("h1", [])
     if h1_list:
         parts.append(f"# {h1_list[0]}")
+    for h2 in page.get("h2", []):
+        parts.append(f"## {h2}")
+    for h3 in page.get("h3", []):
+        parts.append(f"### {h3}")
 
     for section in page.get("sections", []):
         text = section.get("text", "").strip()
@@ -262,9 +271,9 @@ def main() -> None:
         content = extract_page_content(page, shared_keys)
         category = categorize_page(path)
 
-        # Skip pages that have no content after shared/blocklist filtering
-        # (e.g., blog category index pages that only contain nav chrome)
-        if not content.strip():
+        # Skip pages with no meaningful content after shared/blocklist filtering
+        # (e.g., blog category index pages that only contain nav chrome or a lone heading)
+        if not content.strip() or len(content.strip()) < 100:
             skipped_empty += 1
             print(f"  Skipping {path} (no content after filtering)")
             continue
@@ -291,7 +300,7 @@ def main() -> None:
     avg_len = sum(content_lengths) / len(content_lengths) if content_lengths else 0
     empty = sum(1 for r in records if not r["content"].strip())
 
-    print(f"\nExtraction complete!")
+    print("\nExtraction complete!")
     print(f"  Output: {OUTPUT_FILE}")
     print(f"  Pages: {len(records)}")
     print(f"  Categories: {cats['service']} service, {cats['city']} city, {cats['info']} info")
