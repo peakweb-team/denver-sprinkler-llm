@@ -85,6 +85,12 @@ variable "inference_instance_type" {
 
 # --- SSH ---
 
+variable "enable_ssh_access" {
+  description = "Attach SSH security group to instances (set to true and configure allowed_ssh_cidr for SSH access)"
+  type        = bool
+  default     = false
+}
+
 variable "ssh_key_name" {
   description = "Name of an existing EC2 key pair for SSH access"
   type        = string

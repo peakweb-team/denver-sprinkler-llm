@@ -9,7 +9,7 @@ resource "aws_instance" "inference" {
   ami                    = data.aws_ami.amazon_linux_2023.id
   instance_type          = var.inference_instance_type
   subnet_id              = aws_subnet.public.id
-  vpc_security_group_ids = [aws_security_group.ssh.id, aws_security_group.inference.id]
+  vpc_security_group_ids = var.enable_ssh_access ? [aws_security_group.ssh.id, aws_security_group.inference.id] : [aws_security_group.inference.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
   key_name               = var.ssh_key_name != "" ? var.ssh_key_name : null
 

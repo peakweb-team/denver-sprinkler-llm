@@ -17,7 +17,10 @@ alert_email = "you@example.com"
 # AWS region
 # aws_region = "us-west-2"
 
-# Restrict SSH access to your IP (recommended)
+# Enable SSH access on instances (default: false — no SSH SG attached)
+# enable_ssh_access = true
+
+# Restrict SSH access to your IP (only applies when enable_ssh_access = true)
 # allowed_ssh_cidr = "203.0.113.50/32"
 
 # Name of an existing EC2 key pair for SSH access
