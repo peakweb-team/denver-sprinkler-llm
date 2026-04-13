@@ -1,0 +1,30 @@
+{
+  "name": "Denver Sprinkler LLM",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind",
+  "workspaceFolder": "/workspace",
+  "containerEnv": {
+    "AWS_REGION": "${localEnv:AWS_REGION:us-west-2}"
+  },
+  "secrets": {
+    "AWS_ACCESS_KEY_ID": {
+      "description": "AWS access key for Terraform and S3"
+    },
+    "AWS_SECRET_ACCESS_KEY": {
+      "description": "AWS secret key for Terraform and S3"
+    }
+  },
+  "postCreateCommand": "echo '✅ Container ready. Run: claude --dangerously-skip-permissions'",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-python.python",
+        "hashicorp.terraform",
+        "ms-azuretools.vscode-docker"
+      ]
+    }
+  }
+}
