@@ -656,7 +656,7 @@ If there are blockers or worthwhile suggestions:
 After pushing fixes, return to Step 1 — wait for CodeRabbit to re-review the updated branch. Repeat until CodeRabbit has no remaining blockers.
 
 **Loop limits:**
-- Maximum **5 rounds** of CodeRabbit fixes. If still not clean after 5 rounds, stop and escalate to the user with a summary of remaining findings and your assessment of whether they're genuine issues or false positives.
+- Maximum **3 rounds** of CodeRabbit fixes. If there are still nitpick issues after 3 rounds, stop the loop and pass control back to the human for review — summarize what was addressed, what remains, and your assessment of whether remaining items are genuine issues or diminishing-returns churn.
 - Consider CodeRabbit satisfied when: all blockers and nitpicks are either fixed or have a documented reason for skipping, and only informational/acknowledged items remain.
 
 #### Step 5: Request human review
