@@ -30,7 +30,7 @@ resource "aws_instance" "inference" {
   }
 
   # User data placeholder — install bitnet.cpp, FastAPI server, pull model from S3
-  user_data = base64encode(<<-EOF
+  user_data = <<-EOF
     #!/bin/bash
     set -euo pipefail
     echo "Denver Sprinkler LLM — Inference Instance Bootstrap"
@@ -39,7 +39,6 @@ resource "aws_instance" "inference" {
     # TODO: Pull model artifact from S3
     # TODO: Start FastAPI inference server on port 8000
   EOF
-  )
 }
 
 # --- Elastic IP for stable public address ---

@@ -50,6 +50,27 @@ data "aws_ami" "amazon_linux_2023" {
   }
 }
 
+# AWS Deep Learning AMI for GPU training instances (NVIDIA drivers + CUDA pre-installed)
+data "aws_ami" "deep_learning" {
+  most_recent = true
+  owners      = ["amazon"]
+
+  filter {
+    name   = "name"
+    values = ["Deep Learning Base OSS Nvidia Driver AMI (Amazon Linux 2) Version *"]
+  }
+
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+
+  filter {
+    name   = "architecture"
+    values = ["x86_64"]
+  }
+}
+
 # Current AWS account and region info
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}

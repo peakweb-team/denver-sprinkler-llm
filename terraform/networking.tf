@@ -90,6 +90,30 @@ resource "aws_security_group" "ssh" {
   }
 }
 
+# --- Security Group: Training (egress-only) ---
+
+resource "aws_security_group" "training" {
+  name_prefix = "${var.project_name}-training-"
+  description = "Training instance — egress only (no inbound except optional SSH)"
+  vpc_id      = aws_vpc.main.id
+
+  egress {
+    description = "All outbound"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "${var.project_name}-training"
+  }
+
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
 # --- Security Group: Inference (HTTP/HTTPS) ---
 
 resource "aws_security_group" "inference" {
