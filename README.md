@@ -57,6 +57,33 @@ claude --dangerously-skip-permissions
 # Follow the OAuth flow to sign in
 ```
 
+### AWS Infrastructure (Terraform)
+
+The `terraform/` directory contains POC-grade AWS infrastructure:
+
+```bash
+cd terraform/
+terraform init
+cp terraform.tfvars.example terraform.tfvars
+# Edit terraform.tfvars with your S3 bucket name and alert email
+terraform plan
+terraform apply
+```
+
+**AWS credentials** must be set before running Terraform:
+```bash
+export AWS_ACCESS_KEY_ID="your-key"
+export AWS_SECRET_ACCESS_KEY="your-secret"
+```
+
+Compute instances are **off by default** to avoid costs. Enable with:
+```bash
+terraform apply -var="launch_inference=true"   # Start inference server
+terraform apply -var="launch_training=true"     # Start training instance
+```
+
+See [`terraform/README.md`](terraform/README.md) for full details and cost estimates.
+
 ### Project Milestones
 
 See [GitHub Milestones](https://github.com/peakweb-team/denver-sprinkler-llm/milestones) for the full roadmap.
