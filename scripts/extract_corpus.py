@@ -54,6 +54,10 @@ BLOCKLIST_PATTERNS = [
     # Footer address block — starts directly with "Address" (not "Get In Touch")
     # The contact page's "Get In Touch Address..." section is legitimate content
     re.compile(r"^Address\s*3971 S Decatur", re.IGNORECASE),
+    # Shared CTA block: "Get In Touch With Us ... 3971 S Decatur"
+    # Note: /contact-us/ uses "Get In Touch Today!" / "Get In Touch Address..."
+    # which will NOT match this pattern (requires "With Us" + the address).
+    re.compile(r"Get In Touch With Us.*3971 S Decatur", re.IGNORECASE | re.DOTALL),
 ]
 
 # ---------------------------------------------------------------------------

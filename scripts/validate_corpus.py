@@ -235,6 +235,22 @@ def validate(corpus_path: Path) -> bool:
             print(f"         {p}")
         all_passed = False
 
+    # --- Check 11: No shared CTA "Get In Touch With Us" block ---
+    total_checks += 1
+    cta_pattern = re.compile(
+        r"Get In Touch With Us.*3971 S Decatur",
+        re.IGNORECASE | re.DOTALL,
+    )
+    cta_leaks = [r["page"] for r in records if cta_pattern.search(r.get("content", ""))]
+    if not cta_leaks:
+        print(f"  PASS: No shared 'Get In Touch With Us' CTA block detected in content")
+        passed_checks += 1
+    else:
+        print(f"  FAIL: Shared CTA block found in {len(cta_leaks)} pages:")
+        for p in cta_leaks[:10]:
+            print(f"         {p}")
+        all_passed = False
+
     # --- Summary ---
     print(f"\n{'='*50}")
     print(f"Results: {passed_checks}/{total_checks} checks passed")
