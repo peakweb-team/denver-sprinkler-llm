@@ -72,14 +72,25 @@ def fetch_crawl_json(local_path: str | None = None) -> dict:
             return json.load(f)
 
     print(f"Fetching crawl data from {REPO}/{CRAWL_PATH} via gh api ...")
-    result = subprocess.run(
-        [
-            "gh", "api",
-            f"repos/{REPO}/contents/{CRAWL_PATH}",
-            "-H", "Accept: application/vnd.github.raw+json",
-        ],
-        capture_output=True, text=True, check=True,
-    )
+    try:
+        result = subprocess.run(
+            [
+                "gh", "api",
+                f"repos/{REPO}/contents/{CRAWL_PATH}",
+                "-H", "Accept: application/vnd.github.raw+json",
+            ],
+            capture_output=True, text=True, check=True,
+        )
+    except FileNotFoundError as exc:
+        raise SystemExit(
+            "The `gh` CLI is not installed. Install/authenticate `gh`, or pass a local crawl.json path."
+        ) from exc
+    except subprocess.CalledProcessError as exc:
+        stderr = exc.stderr.strip() or str(exc)
+        raise SystemExit(
+            f"Failed to fetch {REPO}/{CRAWL_PATH} via `gh api`: {stderr}\n"
+            "Run `gh auth status` or pass a local crawl.json path."
+        ) from exc
     return json.loads(result.stdout)
 
 

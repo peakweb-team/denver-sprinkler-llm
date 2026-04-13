@@ -57,9 +57,10 @@ BUSINESS_DETAILS = {
 # Validation
 # ---------------------------------------------------------------------------
 
-def load_corpus(path: Path) -> list[dict]:
-    """Load JSONL corpus file."""
+def load_corpus(path: Path) -> tuple[list[dict], int]:
+    """Load JSONL corpus file. Returns (records, parse_error_count)."""
     records = []
+    parse_errors = 0
     with open(path) as f:
         for line_num, line in enumerate(f, 1):
             line = line.strip()
@@ -69,7 +70,8 @@ def load_corpus(path: Path) -> list[dict]:
                 records.append(json.loads(line))
             except json.JSONDecodeError as e:
                 print(f"  FAIL: Invalid JSON on line {line_num}: {e}")
-    return records
+                parse_errors += 1
+    return records, parse_errors
 
 
 def validate(corpus_path: Path) -> bool:
@@ -80,10 +82,19 @@ def validate(corpus_path: Path) -> bool:
         print(f"  FAIL: Corpus file not found at {corpus_path}")
         return False
 
-    records = load_corpus(corpus_path)
+    records, parse_errors = load_corpus(corpus_path)
     all_passed = True
     total_checks = 0
     passed_checks = 0
+
+    # --- Check 0: Valid JSON ---
+    total_checks += 1
+    if parse_errors == 0:
+        print("  PASS: All lines are valid JSON")
+        passed_checks += 1
+    else:
+        print(f"  FAIL: {parse_errors} invalid JSON line(s)")
+        all_passed = False
 
     # --- Check 1: Page count ---
     total_checks += 1
@@ -103,13 +114,15 @@ def validate(corpus_path: Path) -> bool:
             if field not in rec:
                 missing_fields.append((rec.get("page", "?"), field))
     if not missing_fields:
-        print(f"  PASS: All records have required fields (page, title, content, category)")
+        print("  PASS: All records have required fields (page, title, content, category)")
         passed_checks += 1
     else:
         print(f"  FAIL: Missing fields in {len(missing_fields)} records:")
         for page, field in missing_fields[:5]:
             print(f"         {page}: missing '{field}'")
         all_passed = False
+        print(f"\nResults: {passed_checks}/{total_checks} checks passed\nVALIDATION FAILED (schema errors — cannot continue)")
+        return False
 
     # --- Check 3: No empty content ---
     total_checks += 1
