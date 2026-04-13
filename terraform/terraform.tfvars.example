@@ -1,0 +1,42 @@
+# =============================================================================
+# Denver Sprinkler LLM — Terraform Variables
+# Copy this file to terraform.tfvars and fill in your values.
+# NEVER commit terraform.tfvars to git — it may contain sensitive values.
+# =============================================================================
+
+# --- Required ---
+
+# Globally unique S3 bucket name for model artifacts
+s3_bucket_name = "denver-sprinkler-llm-models-CHANGEME"
+
+# Email for budget alarm notifications
+alert_email = "you@example.com"
+
+# --- Optional (defaults shown) ---
+
+# AWS region
+# aws_region = "us-west-2"
+
+# Restrict SSH access to your IP (recommended)
+# allowed_ssh_cidr = "203.0.113.50/32"
+
+# Name of an existing EC2 key pair for SSH access
+# ssh_key_name = "my-keypair"
+
+# Launch the GPU training spot instance (costs money!)
+# launch_training = false
+
+# Training instance type (GPU)
+# training_instance_type = "g5.xlarge"
+
+# Max hourly spot price for training
+# training_spot_max_price = "0.50"
+
+# Launch the always-on inference instance (costs money!)
+# launch_inference = false
+
+# Inference instance type (CPU)
+# inference_instance_type = "t3.medium"
+
+# Monthly budget limit in USD
+# budget_limit = "50.0"
