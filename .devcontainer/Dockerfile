@@ -1,4 +1,4 @@
-FROM ghcr.io/anthropics/claude-code:latest
+FROM mcr.microsoft.com/devcontainers/base:ubuntu
 
 # Python + ML tooling for data prep and local testing
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -11,6 +11,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
     curl \
     unzip \
+    nodejs \
+    npm \
     && rm -rf /var/lib/apt/lists/*
 
 # GitHub CLI (for gh issue, gh pr, etc.)
@@ -20,6 +22,9 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
       > /etc/apt/sources.list.d/github-cli.list \
     && apt-get update && apt-get install -y gh \
     && rm -rf /var/lib/apt/lists/*
+
+# Claude Code CLI (installed via npm)
+RUN npm install -g @anthropic-ai/claude-code
 
 # AWS CLI v2
 RUN curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
@@ -45,8 +50,9 @@ RUN pip3 install --no-cache-dir --break-system-packages \
     httpx \
     anthropic
 
-# Claude Code agent personas and skills
-# Copied from host at build time — mount updated versions at runtime if needed
+# Claude Code agent personas and skills for both root and vscode users
 COPY claude-config/ /root/.claude/
+COPY claude-config/ /home/vscode/.claude/
+RUN chown -R vscode:vscode /home/vscode/.claude/
 
 WORKDIR /workspace
