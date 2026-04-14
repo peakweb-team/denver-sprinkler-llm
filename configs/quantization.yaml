@@ -11,6 +11,7 @@ merged_model_dir: "models/merged"
 # --- BitNet settings ---
 bitnet:
   repo_url: "https://github.com/microsoft/BitNet.git"
+  revision: "58c005d97fafab4cdce7844649e85e1e08f81842"  # v0.1 (2025-03-07)
   cache_dir: ".bitnet-cache"
   output_dir: "models/denver-sprinkler-3b-1bit"
   quant_type: "i2_s"
@@ -21,6 +22,7 @@ bitnet:
 # --- GGUF settings ---
 gguf:
   repo_url: "https://github.com/ggerganov/llama.cpp.git"
+  revision: "b5e0e24de3e3dcf8e7e3b5348ef769cd07b9c774"  # b5060 (2025-04-07)
   cache_dir: ".llama-cpp-cache"
   output_dir: "models/denver-sprinkler-3b-gguf"
   convert_script: "convert_hf_to_gguf.py"

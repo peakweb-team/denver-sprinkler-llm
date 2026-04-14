@@ -58,6 +58,50 @@ def load_config(config_path: str | Path) -> dict:
         return yaml.safe_load(f)
 
 
+def validate_config(config: dict) -> None:
+    """Validate that all required config keys are present.
+
+    Raises ``SystemExit`` with a clear message when a required key is missing.
+    """
+    required_keys: list[tuple[str, ...]] = [
+        ("merged_model_dir",),
+        ("bitnet", "repo_url"),
+        ("bitnet", "cache_dir"),
+        ("bitnet", "output_dir"),
+        ("bitnet", "quant_type"),
+        ("bitnet", "preprocess_script"),
+        ("bitnet", "convert_script"),
+        ("gguf", "repo_url"),
+        ("gguf", "cache_dir"),
+        ("gguf", "output_dir"),
+        ("gguf", "convert_script"),
+        ("gguf", "quant_types"),
+        ("eval", "held_out_questions_path"),
+        ("eval", "reference_eval_path"),
+        ("eval", "output_path"),
+        ("eval", "max_new_tokens"),
+        ("eval", "temperature"),
+        ("eval", "system_prompt"),
+        ("quality", "min_response_length"),
+        ("quality", "max_repetition_ratio"),
+        ("quality", "min_coherence_pass_rate"),
+        ("s3", "prefix"),
+    ]
+
+    missing: list[str] = []
+    for key_path in required_keys:
+        node = config
+        for part in key_path:
+            if not isinstance(node, dict) or part not in node:
+                missing.append(".".join(key_path))
+                break
+            node = node[part]
+
+    if missing:
+        logger.error("Missing required config keys: %s", ", ".join(missing))
+        sys.exit(1)
+
+
 # ---------------------------------------------------------------------------
 # Validation
 # ---------------------------------------------------------------------------
@@ -146,19 +190,35 @@ def run_command(cmd: list[str], cwd: str | Path | None = None, dry_run: bool = F
 # ---------------------------------------------------------------------------
 
 
-def clone_bitnet_repo(cache_dir: Path, repo_url: str, dry_run: bool) -> bool:
+def clone_bitnet_repo(
+    cache_dir: Path, repo_url: str, revision: str | None, dry_run: bool
+) -> bool:
     """Clone the microsoft/BitNet repo if not already cached."""
     if cache_dir.exists():
         logger.info("BitNet repo already cached at %s", cache_dir)
         return True
 
     logger.info("Cloning BitNet repo to %s", cache_dir)
-    cache_dir.parent.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        cache_dir.parent.mkdir(parents=True, exist_ok=True)
     rc = run_command(
-        ["git", "clone", "--depth", "1", repo_url, str(cache_dir)],
+        ["git", "clone", repo_url, str(cache_dir)],
         dry_run=dry_run,
     )
-    return rc == 0
+    if rc != 0:
+        return False
+
+    if revision:
+        logger.info("Checking out BitNet revision %s", revision)
+        rc = run_command(
+            ["git", "checkout", revision],
+            cwd=cache_dir,
+            dry_run=dry_run,
+        )
+        if rc != 0:
+            return False
+
+    return True
 
 
 def build_bitnet_cpp(cache_dir: Path, dry_run: bool) -> bool:
@@ -170,7 +230,8 @@ def build_bitnet_cpp(cache_dir: Path, dry_run: bool) -> bool:
         return True
 
     logger.info("Building bitnet.cpp...")
-    build_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        build_dir.mkdir(parents=True, exist_ok=True)
 
     rc = run_command(
         ["cmake", "..", "-DCMAKE_BUILD_TYPE=Release"],
@@ -218,7 +279,9 @@ def quantize_bitnet(config: dict, dry_run: bool) -> dict:
     logger.info("=" * 60)
     logger.info("BitNet Step 1: Clone repository")
     logger.info("=" * 60)
-    if not clone_bitnet_repo(cache_dir, bitnet_cfg["repo_url"], dry_run):
+    if not clone_bitnet_repo(
+        cache_dir, bitnet_cfg["repo_url"], bitnet_cfg.get("revision"), dry_run
+    ):
         result["status"] = "failed"
         result["error"] = "Failed to clone BitNet repo"
         return result
@@ -238,7 +301,8 @@ def quantize_bitnet(config: dict, dry_run: bool) -> dict:
     logger.info("=" * 60)
     preprocess_script = cache_dir / bitnet_cfg["preprocess_script"]
     preprocessed_dir = output_dir / "preprocessed"
-    preprocessed_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        preprocessed_dir.mkdir(parents=True, exist_ok=True)
 
     # Copy merged model to preprocessed dir for in-place modification
     if not dry_run:
@@ -266,7 +330,8 @@ def quantize_bitnet(config: dict, dry_run: bool) -> dict:
     logger.info("=" * 60)
     convert_script = cache_dir / bitnet_cfg["convert_script"]
     gguf_f32_path = output_dir / "ggml-model-f32.gguf"
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        output_dir.mkdir(parents=True, exist_ok=True)
 
     rc = run_command(
         [
@@ -328,19 +393,35 @@ def quantize_bitnet(config: dict, dry_run: bool) -> dict:
 # ---------------------------------------------------------------------------
 
 
-def clone_llamacpp_repo(cache_dir: Path, repo_url: str, dry_run: bool) -> bool:
+def clone_llamacpp_repo(
+    cache_dir: Path, repo_url: str, revision: str | None, dry_run: bool
+) -> bool:
     """Clone the llama.cpp repo if not already cached."""
     if cache_dir.exists():
         logger.info("llama.cpp repo already cached at %s", cache_dir)
         return True
 
     logger.info("Cloning llama.cpp repo to %s", cache_dir)
-    cache_dir.parent.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        cache_dir.parent.mkdir(parents=True, exist_ok=True)
     rc = run_command(
-        ["git", "clone", "--depth", "1", repo_url, str(cache_dir)],
+        ["git", "clone", repo_url, str(cache_dir)],
         dry_run=dry_run,
     )
-    return rc == 0
+    if rc != 0:
+        return False
+
+    if revision:
+        logger.info("Checking out llama.cpp revision %s", revision)
+        rc = run_command(
+            ["git", "checkout", revision],
+            cwd=cache_dir,
+            dry_run=dry_run,
+        )
+        if rc != 0:
+            return False
+
+    return True
 
 
 def build_llamacpp(cache_dir: Path, dry_run: bool) -> bool:
@@ -352,7 +433,8 @@ def build_llamacpp(cache_dir: Path, dry_run: bool) -> bool:
         return True
 
     logger.info("Building llama.cpp...")
-    build_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        build_dir.mkdir(parents=True, exist_ok=True)
 
     rc = run_command(
         ["cmake", "..", "-DCMAKE_BUILD_TYPE=Release"],
@@ -402,7 +484,9 @@ def quantize_gguf(config: dict, quant_types: list[str] | None, dry_run: bool) ->
     logger.info("=" * 60)
     logger.info("GGUF Step 1: Clone llama.cpp repository")
     logger.info("=" * 60)
-    if not clone_llamacpp_repo(cache_dir, gguf_cfg["repo_url"], dry_run):
+    if not clone_llamacpp_repo(
+        cache_dir, gguf_cfg["repo_url"], gguf_cfg.get("revision"), dry_run
+    ):
         result["status"] = "failed"
         result["error"] = "Failed to clone llama.cpp repo"
         return result
@@ -421,7 +505,8 @@ def quantize_gguf(config: dict, quant_types: list[str] | None, dry_run: bool) ->
     logger.info("GGUF Step 3: Convert HF model to GGUF F16")
     logger.info("=" * 60)
     convert_script = cache_dir / gguf_cfg["convert_script"]
-    output_dir.mkdir(parents=True, exist_ok=True)
+    if not dry_run:
+        output_dir.mkdir(parents=True, exist_ok=True)
     f16_path = output_dir / "ggml-model-f16.gguf"
 
     rc = run_command(
@@ -596,7 +681,12 @@ def evaluate_quantized_model(
         return eval_result
 
     with open(held_out_path, "r", encoding="utf-8") as f:
-        held_out = json.load(f)
+        data = json.load(f)
+    # Support both bare list [{...}] and wrapper object {"questions": [{...}]}
+    if isinstance(data, list):
+        held_out = data
+    else:
+        held_out = data.get("questions", data.get("held_out", []))
 
     # Load reference eval for comparison (if available)
     reference_answers = {}
@@ -964,6 +1054,7 @@ def main():
 
     logger.info("Loading config from %s", config_path)
     config = load_config(config_path)
+    validate_config(config)
 
     merged_dir = PROJECT_ROOT / config["merged_model_dir"]
 
@@ -1056,7 +1147,8 @@ def main():
         # Save eval results
         results["_quality_threshold"] = config["quality"]["min_coherence_pass_rate"]
         eval_output_path = PROJECT_ROOT / config["eval"]["output_path"]
-        eval_output_path.parent.mkdir(parents=True, exist_ok=True)
+        if not args.dry_run:
+            eval_output_path.parent.mkdir(parents=True, exist_ok=True)
         if not args.dry_run:
             with open(eval_output_path, "w", encoding="utf-8") as f:
                 json.dump(results["eval"], f, indent=2, ensure_ascii=False)
@@ -1066,7 +1158,7 @@ def main():
                 "[DRY RUN] Would save eval results to %s", eval_output_path
             )
 
-        # Check for BitNet quality failure -> recommend GGUF
+        # Check for BitNet quality failure -> automatic GGUF fallback
         if run_bitnet and results.get("bitnet", {}).get("status") == "success":
             bitnet_artifacts = results["bitnet"].get("artifacts", [])
             if bitnet_artifacts:
@@ -1086,11 +1178,42 @@ def main():
                     logger.warning(
                         "This is expected for post-training ternary quantization."
                     )
+
+                    # Mark BitNet output as experimental
+                    results["bitnet"]["experimental"] = True
+                    logger.warning(
+                        "BitNet output marked as experimental due to quality failure."
+                    )
+
+                    # Automatically trigger GGUF fallback if not already run
+                    if not run_gguf:
+                        logger.warning(
+                            "Automatically triggering GGUF quantization as fallback..."
+                        )
+                        results["gguf"] = quantize_gguf(
+                            config, gguf_quant_types, args.dry_run
+                        )
+                        # Evaluate the GGUF fallback models
+                        if results["gguf"].get("status") == "success":
+                            llamacpp_cache = (
+                                PROJECT_ROOT / config["gguf"]["cache_dir"]
+                            )
+                            llama_cli = str(
+                                llamacpp_cache / "build" / "bin" / "llama-cli"
+                            )
+                            for artifact in results["gguf"].get("artifacts", []):
+                                results["eval"][artifact] = (
+                                    evaluate_quantized_model(
+                                        artifact, llama_cli, config, args.dry_run
+                                    )
+                                )
+
                     logger.warning(
                         "Recommendation: Use GGUF Q4_K_M for production."
                     )
                     logger.warning(
-                        "For true 1-bit performance, fine-tune from a BitNet-native base model."
+                        "For true 1-bit performance, fine-tune from a "
+                        "BitNet-native base model."
                     )
     else:
         logger.info("Skipping quality evaluation (--skip-eval)")

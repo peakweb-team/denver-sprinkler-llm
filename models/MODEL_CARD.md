@@ -147,7 +147,7 @@ Results are stored in `models/quantized_eval_results.json`.
 
 ## Citation
 
-```
+```text
 Base model: Meta Llama 3.2 3B-Instruct
 BitNet tooling: microsoft/BitNet (https://github.com/microsoft/BitNet)
 GGUF tooling: ggerganov/llama.cpp (https://github.com/ggerganov/llama.cpp)
