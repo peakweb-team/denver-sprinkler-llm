@@ -83,6 +83,12 @@ variable "inference_instance_type" {
   default     = "t3.medium"
 }
 
+variable "inference_domain" {
+  description = "Domain name for HTTPS via Let's Encrypt certbot (leave empty for HTTP-only mode)"
+  type        = string
+  default     = ""
+}
+
 # --- SSH ---
 
 variable "enable_ssh_access" {

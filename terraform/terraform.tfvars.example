@@ -41,5 +41,8 @@ alert_email = "you@example.com"
 # Inference instance type (CPU)
 # inference_instance_type = "t3.medium"
 
+# Domain name for HTTPS (leave unset for HTTP-only mode)
+# inference_domain = "llm.denversprinklerservices.com"
+
 # Monthly budget limit in USD
 # budget_limit = "50.0"

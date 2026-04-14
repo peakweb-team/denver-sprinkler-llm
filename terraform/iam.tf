@@ -95,6 +95,28 @@ resource "aws_iam_role_policy" "ec2_describe" {
   })
 }
 
+# --- CloudWatch Metrics policy (for CloudWatch agent) ---
+
+resource "aws_iam_role_policy" "cloudwatch_metrics" {
+  name = "${var.project_name}-cloudwatch-metrics"
+  role = aws_iam_role.ec2_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricData",
+          "cloudwatch:GetMetricData",
+          "cloudwatch:ListMetrics"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # --- Instance Profile ---
 
 resource "aws_iam_instance_profile" "ec2_profile" {

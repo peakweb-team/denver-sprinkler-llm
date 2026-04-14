@@ -46,3 +46,8 @@ output "budget_sns_topic_arn" {
   description = "ARN of the SNS topic for budget alerts"
   value       = aws_sns_topic.budget_alerts.arn
 }
+
+output "health_check_url" {
+  description = "URL for the inference server health check endpoint"
+  value       = var.launch_inference ? "http://${aws_eip.inference[0].public_ip}/health" : ""
+}
