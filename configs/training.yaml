@@ -1,0 +1,68 @@
+# =============================================================================
+# Denver Sprinkler LLM — LoRA Fine-Tuning Configuration
+# =============================================================================
+# Target hardware: g5.xlarge (NVIDIA A10G, 24 GB VRAM)
+# Dataset: 1,049 Q&A pairs from data/training-pairs.jsonl
+# Estimated training time: 30-45 minutes
+# Estimated cost: $0.25-0.40 (spot pricing)
+# =============================================================================
+
+# --- Model ---
+base_model: "meta-llama/Llama-3.2-3B-Instruct"
+max_seq_length: 512
+
+# --- LoRA ---
+lora_r: 16
+lora_alpha: 32
+lora_dropout: 0.05
+target_modules:
+  - q_proj
+  - k_proj
+  - v_proj
+  - o_proj
+
+# --- Training ---
+num_epochs: 3
+per_device_train_batch_size: 4
+gradient_accumulation_steps: 4       # effective batch size = 16
+learning_rate: 2.0e-4
+lr_scheduler_type: "cosine"
+warmup_ratio: 0.1
+weight_decay: 0.01
+fp16: true
+max_grad_norm: 1.0
+
+# --- Data ---
+data_path: "data/training-pairs.jsonl"
+train_split: 0.9
+eval_split: 0.1
+held_out_count: 20
+seed: 42
+
+# --- Logging ---
+logging_steps: 10
+eval_steps: 50
+save_steps: 50
+logging_dir: "logs/tensorboard"
+
+# --- Output ---
+output_dir: "models/lora-adapter"
+merged_output_dir: "models/merged"
+
+# --- S3 ---
+s3_prefix: "models/llama-3.2-3b-lora"
+
+# --- Inference (for evaluation) ---
+eval_temperature: 0.7
+eval_max_new_tokens: 300
+
+# --- Spot instance cost tracking ---
+spot_price_per_hour: 0.50
+
+# --- System prompt baked into all training examples ---
+system_prompt: >-
+  You are a helpful assistant for Denver Sprinkler and Landscape,
+  a landscaping and sprinkler company in Englewood, Colorado.
+  Phone: (303) 993-8717. Email: info@denversprinklerservices.com.
+  Address: 3971 S Decatur St Unit A, Englewood, CO 80110.
+  Hours: Mon-Fri 7am-5pm, Sat 8am-2pm, Sun Closed. Emergency service available 24/7.
