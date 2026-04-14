@@ -30,6 +30,9 @@ terraform/*.tfstate.backup
 terraform/.terraform.lock.hcl
 terraform/terraform.tfvars
 
+# Transcripts (keep .gitkeep, ignore saved conversations)
+data/transcripts/*.json
+
 # OS
 .DS_Store
 
