@@ -10,12 +10,14 @@ __pycache__/
 venv/
 
 # Model artifacts (large files — use S3)
+models/*/
 models/*.bin
 models/*.gguf
 models/*.safetensors
 models/*.pt
 
 # Training artifacts
+logs/
 *.log
 wandb/
 runs/
