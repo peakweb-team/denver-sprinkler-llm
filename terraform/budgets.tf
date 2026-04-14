@@ -32,6 +32,13 @@ resource "aws_sns_topic_policy" "budget_alerts" {
         Principal = { Service = "budgets.amazonaws.com" }
         Action    = "SNS:Publish"
         Resource  = aws_sns_topic.budget_alerts.arn
+      },
+      {
+        Sid       = "AllowCloudWatchPublish"
+        Effect    = "Allow"
+        Principal = { Service = "cloudwatch.amazonaws.com" }
+        Action    = "SNS:Publish"
+        Resource  = aws_sns_topic.budget_alerts.arn
       }
     ]
   })
