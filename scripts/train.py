@@ -156,7 +156,6 @@ def load_base_model(model_name: str, fp16: bool):
     tokenizer = AutoTokenizer.from_pretrained(
         model_name,
         token=hf_token,
-        trust_remote_code=True,
     )
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
@@ -168,7 +167,6 @@ def load_base_model(model_name: str, fp16: bool):
         token=hf_token,
         torch_dtype=torch.float16 if fp16 else torch.float32,
         device_map="auto",
-        trust_remote_code=True,
     )
     model.config.use_cache = False  # Required for gradient checkpointing
 
@@ -349,6 +347,14 @@ def train(config: dict):
     merged_model.save_pretrained(str(merged_dir))
     tokenizer.save_pretrained(str(merged_dir))
     logger.info("Merged model saved to %s", merged_dir)
+
+    # Free training VRAM before loading eval models
+    del merged_model
+    del model
+    del trainer
+    if torch.cuda.is_available():
+        torch.cuda.empty_cache()
+    logger.info("Freed training VRAM for evaluation")
 
     # -----------------------------------------------------------------------
     # Step 9: Run held-out evaluation
