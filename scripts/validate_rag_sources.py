@@ -160,7 +160,7 @@ def validate() -> bool:
     max_words = max(word_counts) if word_counts else 0
     short_count = sum(1 for wc in word_counts if wc < MIN_CONTENT_WORDS)
 
-    print(f"\nContent Quality Metrics:")
+    print("\nContent Quality Metrics:")
     print(f"  Average words per chunk: {avg_words:.0f}")
     print(f"  Min words: {min_words}")
     print(f"  Max words: {max_words}")
@@ -171,11 +171,11 @@ def validate() -> bool:
 
     # --- Source distribution ---
     source_counter = Counter(r.get("source_name", "") for r in records)
-    print(f"\nSource Distribution:")
+    print("\nSource Distribution:")
     for src, count in source_counter.most_common():
         print(f"  {src}: {count}")
 
-    print(f"\nCategory Distribution:")
+    print("\nCategory Distribution:")
     for cat, count in cat_counter.most_common():
         print(f"  {cat}: {count}")
 

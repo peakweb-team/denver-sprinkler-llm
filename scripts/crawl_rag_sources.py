@@ -13,7 +13,7 @@ Usage:
 import json
 import re
 import time
-import xml.etree.ElementTree as ET
+import defusedxml.ElementTree as ET
 from collections import Counter
 from pathlib import Path
 from typing import Optional
@@ -491,7 +491,7 @@ def classify_category(text: str) -> str:
 
     Uses occurrence count (not just unique presence) so that a text
     mentioning "patio" 5 times scores higher for hardscaping than one
-    that mentions it once.  Hardscaping keywords get a 2x boost because
+    that mentions it once.  Hardscaping keywords get a 3x boost because
     the category is narrow and easily drowned out by broader terms.
     """
     text_lower = text.lower()
@@ -625,10 +625,10 @@ def main() -> None:
     print(f"{'='*60}")
     print(f"Total chunks: {len(all_records)}")
     print(f"Output: {OUTPUT_FILE}")
-    print(f"\nChunks by source:")
+    print("\nChunks by source:")
     for src, count in source_counter.most_common():
         print(f"  {src}: {count}")
-    print(f"\nChunks by category:")
+    print("\nChunks by category:")
     for cat, count in category_counter.most_common():
         print(f"  {cat}: {count}")
 
