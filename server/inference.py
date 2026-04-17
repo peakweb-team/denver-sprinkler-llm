@@ -115,23 +115,37 @@ class InferenceEngine:
     # ---- private helpers --------------------------------------------------
 
     async def _run_llama_cli(self, prompt: str) -> str:
-        proc = await asyncio.create_subprocess_exec(
-            LLAMA_CLI_PATH,
-            "-m", MODEL_PATH,
-            "-p", prompt,
-            "-n", str(MAX_TOKENS),
-            "--ctx-size", "2048",
-            "--temp", str(TEMPERATURE),
-            "--top-p", "0.9",
-            "--no-display-prompt",
-            "--single-turn",
-            stdout=asyncio.subprocess.PIPE,
-            stderr=asyncio.subprocess.PIPE,
-        )
+        import tempfile
+        # Write prompt to temp file to avoid shell escaping issues with special tokens
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as f:
+            f.write(prompt)
+            prompt_file = f.name
+
+        try:
+            # Use shell wrapper to set unlimited stack size — bitnet.cpp's
+            # optimized kernels use large stack allocations that exceed Python's
+            # default subprocess stack limit.
+            cmd = (
+                f"ulimit -s unlimited && "
+                f"{LLAMA_CLI_PATH} -m {MODEL_PATH} "
+                f"--file {prompt_file} "
+                f"-n {MAX_TOKENS} --ctx-size 2048 "
+                f"--temp {TEMPERATURE} --top-p 0.9"
+            )
+            proc = await asyncio.create_subprocess_shell(
+                cmd,
+                stdin=asyncio.subprocess.PIPE,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+            )
+        except Exception:
+            import os
+            os.unlink(prompt_file)
+            raise
 
         try:
             stdout, stderr = await asyncio.wait_for(
-                proc.communicate(),
+                proc.communicate(input=b""),
                 timeout=INFERENCE_TIMEOUT,
             )
         except asyncio.TimeoutError:
@@ -140,6 +154,9 @@ class InferenceEngine:
             raise TimeoutError(
                 f"Inference timed out after {INFERENCE_TIMEOUT}s"
             )
+
+        import os
+        os.unlink(prompt_file)
 
         if proc.returncode != 0:
             err = stderr.decode(encoding="utf-8", errors="replace")
@@ -151,28 +168,18 @@ class InferenceEngine:
 
     @staticmethod
     def _clean_output(raw: str) -> str:
-        """Strip llama.cpp banner, spinner chars, and metadata from output."""
+        """Extract the assistant's response from llama-cli output."""
+        # Find the last "Assistant:" in the output and take everything after it
+        marker = "Assistant:"
+        if marker in raw:
+            text = raw.rsplit(marker, 1)[1]
+        else:
+            text = raw
+
+        # Remove [end of text] marker
+        text = text.replace("[end of text]", "")
+        # Remove performance stats
         import re
-        # Remove ANSI escape sequences and backspace spinner chars
-        text = re.sub(r'[\x08]', '', raw)
-        text = re.sub(r'Loading model\.\.\.[|\\\-/\s]+', '', text)
-        # Remove the llama.cpp ASCII art banner
-        text = re.sub(r'▄.*?▀▀\s*▀▀', '', text, flags=re.DOTALL)
-        # Remove build/model/modalities info block
-        text = re.sub(r'build\s+:.*?(?=\n\n|\n>)', '', text, flags=re.DOTALL)
-        # Remove available commands block
-        text = re.sub(r'available commands:.*?(?=\n\n|\n>)', '', text, flags=re.DOTALL)
-        # Remove the echoed prompt (everything up to and including the last >)
-        if '>' in text:
-            parts = text.rsplit('>', 1)
-            if len(parts) == 2:
-                text = parts[1]
-        # Remove performance stats line
-        text = re.sub(r'\[\s*Prompt:.*?\]', '', text)
-        # Remove "Exiting..." line
+        text = re.sub(r'\[.*?Prompt:.*?\]', '', text)
         text = re.sub(r'Exiting\.\.\.', '', text)
-        # Remove spinner artifacts
-        text = re.sub(r'[|/\\\-]{1,2}(?:\s*[|/\\\-])*', '', text)
-        # Clean up whitespace
-        text = re.sub(r'\n{3,}', '\n\n', text)
         return text.strip()
