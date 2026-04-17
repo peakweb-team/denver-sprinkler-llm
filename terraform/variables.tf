@@ -80,7 +80,7 @@ variable "launch_inference" {
 variable "inference_instance_type" {
   description = "EC2 instance type for inference (CPU instance)"
   type        = string
-  default     = "t3.medium"
+  default     = "t3.small"
 }
 
 variable "inference_domain" {
