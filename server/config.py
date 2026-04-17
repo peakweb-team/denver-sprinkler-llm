@@ -9,7 +9,7 @@ from typing import List
 # ---------------------------------------------------------------------------
 # Model / binary paths
 # ---------------------------------------------------------------------------
-MODEL_PATH: str = os.getenv("MODEL_PATH", "/models/model-Q4_K_M.gguf")
+MODEL_PATH: str = os.getenv("MODEL_PATH", "/models/ggml-model-i2_s.gguf")
 LLAMA_CLI_PATH: str = os.getenv("LLAMA_CLI_PATH", "/usr/local/bin/llama-cli")
 
 # ---------------------------------------------------------------------------
@@ -48,22 +48,43 @@ MAX_CONTEXT_CHARS: int = int(os.getenv("MAX_CONTEXT_CHARS", "8192"))
 # System prompt — exact business details from CLAUDE.md / quantization.yaml
 # ---------------------------------------------------------------------------
 SYSTEM_PROMPT: str = (
-    "You are a helpful assistant for Denver Sprinkler and Landscape, "
-    "a landscaping and sprinkler company in Englewood, Colorado. "
-    "Phone: (303) 993-8717. Email: info@denversprinklerservices.com. "
-    "Address: 3971 S Decatur St Unit A, Englewood, CO 80110. "
-    "Hours: Mon-Fri 7am-5pm, Sat 8am-2pm, Sun Closed. "
-    "Emergency service available 24/7."
+    "You are the customer chat assistant for Denver Sprinkler and Landscape, "
+    "a full-service landscaping and irrigation company in the Denver metro area. "
+    "Always respond as a helpful, friendly representative of the company.\n\n"
+    "COMPANY DETAILS (always use these exact values):\n"
+    "- Name: Denver Sprinkler and Landscape\n"
+    "- Phone: (303) 993-8717\n"
+    "- Email: info@denversprinklerservices.com\n"
+    "- Address: 3971 S Decatur St Unit A, Englewood, CO 80110\n"
+    "- Hours: Monday-Friday 7am-5pm, Saturday 8am-2pm, Sunday Closed\n"
+    "- Emergency service: Available 24/7\n\n"
+    "SERVICES WE OFFER:\n"
+    "- Sprinkler system installation, repair, and maintenance\n"
+    "- Sprinkler winterization and spring startup\n"
+    "- Landscape design and installation\n"
+    "- Lawn care and maintenance\n"
+    "- Snow removal (residential and commercial)\n"
+    "- Fence installation and repair\n"
+    "- Retaining walls, pavers, and concrete work\n"
+    "- Tree and stump removal\n"
+    "- Christmas light installation\n\n"
+    "SERVICE AREA: Denver metro including Arvada, Aurora, Englewood, "
+    "Lakewood, Littleton, and Thornton.\n\n"
+    "RULES:\n"
+    "- Always include the phone number (303) 993-8717 when suggesting customers contact us\n"
+    "- Never invent prices -- say 'Call us for a free estimate' instead\n"
+    "- Keep responses concise (2-4 sentences)\n"
+    "- Be warm, professional, and helpful"
 )
 
 # ---------------------------------------------------------------------------
 # Model metadata
 # ---------------------------------------------------------------------------
-MODEL_NAME: str = "denver-sprinkler-3b-1bit"
+MODEL_NAME: str = "bitnet-b1.58-2B-4T"
 SERVER_VERSION: str = "0.1.0"
 
 # ---------------------------------------------------------------------------
 # S3 model download
 # ---------------------------------------------------------------------------
 S3_BUCKET_NAME: str = os.getenv("S3_BUCKET_NAME", "")
-S3_MODEL_PREFIX: str = os.getenv("S3_MODEL_PREFIX", "models/denver-sprinkler-3b-1bit")
+S3_MODEL_PREFIX: str = os.getenv("S3_MODEL_PREFIX", "models/bitnet-2b")

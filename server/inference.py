@@ -42,25 +42,24 @@ def format_prompt(
     messages: List[ChatMessage],
     system_prompt: str = SYSTEM_PROMPT,
 ) -> str:
-    """Build a Llama 3.2 Instruct chat-template prompt.
+    """Build a BitNet-b1.58-2B-4T chat-template prompt.
 
+    Uses the model's native format: System:/User:/Assistant: with <|eot_id|> delimiters.
     Truncates older messages (keeping the system prompt and latest turns)
     if the formatted result would exceed *MAX_CONTEXT_CHARS*.
     """
-    header = (
-        f"<|begin_of_text|><|start_header_id|>system<|end_header_id|>\n\n"
-        f"{system_prompt}<|eot_id|>"
-    )
-    suffix = "<|start_header_id|>assistant<|end_header_id|>\n\n"
+    header = f"<|begin_of_text|>System: {system_prompt}<|eot_id|>"
+    suffix = "Assistant:"
     budget = MAX_CONTEXT_CHARS - len(header) - len(suffix)
+
+    # Map roles to BitNet format
+    role_map = {"user": "User", "assistant": "Assistant"}
 
     # Build per-message fragments newest-first so we can drop the oldest.
     fragments: list[str] = []
     for msg in reversed(messages):
-        frag = (
-            f"<|start_header_id|>{msg.role}<|end_header_id|>\n\n"
-            f"{msg.content}<|eot_id|>"
-        )
+        role = role_map.get(msg.role, msg.role.capitalize())
+        frag = f"{role}: {msg.content}<|eot_id|>"
         if budget - len(frag) < 0:
             break
         fragments.append(frag)

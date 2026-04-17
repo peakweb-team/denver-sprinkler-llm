@@ -98,7 +98,7 @@ ExecStart=/usr/bin/docker run --name inference \
   --mount type=bind,source=/opt/models,target=/models \
   -e S3_BUCKET_NAME=${s3_bucket_name} \
   -e S3_MODEL_PREFIX=${s3_model_prefix} \
-  -e MODEL_PATH=/models/model-Q4_K_M.gguf \
+  -e MODEL_PATH=/models/ggml-model-i2_s.gguf \
   -p 127.0.0.1:8000:8000 \
   denver-sprinkler-inference:latest
 ExecStop=/usr/bin/docker stop inference

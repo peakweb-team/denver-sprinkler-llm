@@ -146,7 +146,7 @@ def format_chat_examples(
 # ---------------------------------------------------------------------------
 
 
-def load_base_model(model_name: str, fp16: bool):
+def load_base_model(model_name: str, fp16: bool, bf16: bool = False):
     """Load the base model and tokenizer."""
     hf_token = os.environ.get("HF_TOKEN")
     if not hf_token:
@@ -160,12 +160,17 @@ def load_base_model(model_name: str, fp16: bool):
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.pad_token_id = tokenizer.eos_token_id
-
-    logger.info("Loading model: %s (fp16=%s)", model_name, fp16)
+    if bf16:
+        dtype = torch.bfloat16
+    elif fp16:
+        dtype = torch.float16
+    else:
+        dtype = torch.float32
+    logger.info("Loading model: %s (dtype=%s)", model_name, dtype)
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
         token=hf_token,
-        torch_dtype=torch.float16 if fp16 else torch.float32,
+        torch_dtype=dtype,
         device_map="auto",
     )
     model.config.use_cache = False  # Required for gradient checkpointing
@@ -241,7 +246,9 @@ def train(config: dict):
     logger.info("Step 2: Loading base model and tokenizer")
     logger.info("=" * 60)
 
-    model, tokenizer = load_base_model(config["base_model"], config["fp16"])
+    model, tokenizer = load_base_model(
+        config["base_model"], config.get("fp16", False), config.get("bf16", False)
+    )
 
     # -----------------------------------------------------------------------
     # Step 3: Format data into chat template
@@ -291,7 +298,8 @@ def train(config: dict):
         lr_scheduler_type=config["lr_scheduler_type"],
         warmup_steps=max(1, int(config["warmup_ratio"] * 177)),
         weight_decay=config["weight_decay"],
-        fp16=config["fp16"],
+        fp16=config.get("fp16", False),
+        bf16=config.get("bf16", False),
         max_grad_norm=config["max_grad_norm"],
         logging_steps=config["logging_steps"],
         eval_strategy="steps",

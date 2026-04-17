@@ -31,7 +31,7 @@ resource "aws_instance" "inference" {
 
   user_data = templatefile("${path.module}/templates/inference-userdata.sh.tpl", {
     s3_bucket_name   = var.s3_bucket_name
-    s3_model_prefix  = "models/denver-sprinkler-3b-gguf"
+    s3_model_prefix  = "models/bitnet-2b"
     inference_domain = var.inference_domain
     repo_url         = "peakweb-team/denver-sprinkler-llm"
     alert_email      = var.alert_email
