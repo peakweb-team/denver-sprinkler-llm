@@ -1,5 +1,5 @@
 ###############################################################################
-# Networking — VPC, Subnet, Internet Gateway, Route Table, Security Groups
+# Networking - VPC, Subnet, Internet Gateway, Route Table, Security Groups
 # POC-grade: single public subnet, no NAT gateway
 ###############################################################################
 
@@ -94,7 +94,7 @@ resource "aws_security_group" "ssh" {
 
 resource "aws_security_group" "training" {
   name_prefix = "${var.project_name}-training-"
-  description = "Training instance — egress only (no inbound except optional SSH)"
+  description = "Training instance - egress only (no inbound except optional SSH)"
   vpc_id      = aws_vpc.main.id
 
   egress {

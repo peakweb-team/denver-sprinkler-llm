@@ -29,7 +29,7 @@ from transformers import (
     AutoTokenizer,
     TrainingArguments,
 )
-from trl import SFTTrainer
+from trl import SFTConfig, SFTTrainer
 
 # ---------------------------------------------------------------------------
 # Logging
@@ -279,18 +279,20 @@ def train(config: dict):
     logger.info("Step 5: Configuring training")
     logger.info("=" * 60)
 
-    training_args = TrainingArguments(
+    import os as _os
+    _os.environ.setdefault("TENSORBOARD_LOGGING_DIR", str(logging_dir))
+
+    training_args = SFTConfig(
         output_dir=str(output_dir),
         num_train_epochs=config["num_epochs"],
         per_device_train_batch_size=config["per_device_train_batch_size"],
         gradient_accumulation_steps=config["gradient_accumulation_steps"],
         learning_rate=config["learning_rate"],
         lr_scheduler_type=config["lr_scheduler_type"],
-        warmup_ratio=config["warmup_ratio"],
+        warmup_steps=max(1, int(config["warmup_ratio"] * 177)),
         weight_decay=config["weight_decay"],
         fp16=config["fp16"],
         max_grad_norm=config["max_grad_norm"],
-        logging_dir=str(logging_dir),
         logging_steps=config["logging_steps"],
         eval_strategy="steps",
         eval_steps=config["eval_steps"],
@@ -302,8 +304,8 @@ def train(config: dict):
         greater_is_better=False,
         report_to=["tensorboard"],
         seed=config["seed"],
-        dataloader_seed=config["seed"],
         remove_unused_columns=False,
+        max_length=config["max_seq_length"],
     )
 
     trainer = SFTTrainer(
@@ -312,7 +314,6 @@ def train(config: dict):
         train_dataset=train_dataset,
         eval_dataset=val_dataset,
         processing_class=tokenizer,
-        max_seq_length=config["max_seq_length"],
     )
 
     # -----------------------------------------------------------------------
@@ -664,7 +665,7 @@ def main():
     # Verify CUDA
     if torch.cuda.is_available():
         gpu_name = torch.cuda.get_device_name(0)
-        gpu_mem = torch.cuda.get_device_properties(0).total_mem / (1024**3)
+        gpu_mem = torch.cuda.get_device_properties(0).total_memory / (1024**3)
         logger.info("GPU: %s (%.1f GB VRAM)", gpu_name, gpu_mem)
     else:
         logger.warning("No CUDA GPU detected! Training will be very slow on CPU.")

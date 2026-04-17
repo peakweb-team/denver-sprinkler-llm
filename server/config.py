@@ -9,7 +9,7 @@ from typing import List
 # ---------------------------------------------------------------------------
 # Model / binary paths
 # ---------------------------------------------------------------------------
-MODEL_PATH: str = os.getenv("MODEL_PATH", "/models/ggml-model-i2_s.gguf")
+MODEL_PATH: str = os.getenv("MODEL_PATH", "/models/model-Q4_K_M.gguf")
 LLAMA_CLI_PATH: str = os.getenv("LLAMA_CLI_PATH", "/usr/local/bin/llama-cli")
 
 # ---------------------------------------------------------------------------
@@ -32,7 +32,7 @@ RATE_LIMIT: str = os.getenv("RATE_LIMIT", "10/minute")
 # ---------------------------------------------------------------------------
 MAX_TOKENS: int = int(os.getenv("MAX_TOKENS", "300"))
 TEMPERATURE: float = float(os.getenv("TEMPERATURE", "0.7"))
-INFERENCE_TIMEOUT: int = int(os.getenv("INFERENCE_TIMEOUT", "30"))
+INFERENCE_TIMEOUT: int = int(os.getenv("INFERENCE_TIMEOUT", "120"))
 
 # ---------------------------------------------------------------------------
 # Mock mode — returns canned responses without llama-cli

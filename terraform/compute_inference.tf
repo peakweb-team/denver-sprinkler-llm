@@ -11,7 +11,7 @@ resource "aws_instance" "inference" {
   subnet_id              = aws_subnet.public.id
   vpc_security_group_ids = var.enable_ssh_access ? [aws_security_group.ssh.id, aws_security_group.inference.id] : [aws_security_group.inference.id]
   iam_instance_profile   = aws_iam_instance_profile.ec2_profile.name
-  key_name               = var.ssh_key_name != "" ? var.ssh_key_name : null
+  key_name               = local.ssh_key_name
 
   metadata_options {
     http_tokens                 = "required"
@@ -31,7 +31,7 @@ resource "aws_instance" "inference" {
 
   user_data = templatefile("${path.module}/templates/inference-userdata.sh.tpl", {
     s3_bucket_name   = var.s3_bucket_name
-    s3_model_prefix  = "models/denver-sprinkler-3b-1bit"
+    s3_model_prefix  = "models/denver-sprinkler-3b-gguf"
     inference_domain = var.inference_domain
     repo_url         = "peakweb-team/denver-sprinkler-llm"
     alert_email      = var.alert_email

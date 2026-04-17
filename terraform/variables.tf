@@ -33,7 +33,7 @@ variable "public_subnet_cidr" {
 variable "availability_zone" {
   description = "Availability zone for the public subnet"
   type        = string
-  default     = "us-west-2a"
+  default     = "us-east-1a"
 }
 
 variable "allowed_ssh_cidr" {
@@ -98,7 +98,13 @@ variable "enable_ssh_access" {
 }
 
 variable "ssh_key_name" {
-  description = "Name of an existing EC2 key pair for SSH access"
+  description = "Name of an existing EC2 key pair for SSH access. If empty, a key pair is created from ssh_public_key."
+  type        = string
+  default     = ""
+}
+
+variable "ssh_public_key" {
+  description = "Public key material for creating an EC2 key pair (used when ssh_key_name is empty)"
   type        = string
   default     = ""
 }

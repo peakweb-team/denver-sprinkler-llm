@@ -121,9 +121,11 @@ class InferenceEngine:
             "-m", MODEL_PATH,
             "-p", prompt,
             "-n", str(MAX_TOKENS),
+            "--ctx-size", "2048",
             "--temp", str(TEMPERATURE),
             "--top-p", "0.9",
             "--no-display-prompt",
+            "--single-turn",
             stdout=asyncio.subprocess.PIPE,
             stderr=asyncio.subprocess.PIPE,
         )
@@ -145,4 +147,33 @@ class InferenceEngine:
             logger.error("llama-cli exited %d: %s", proc.returncode, err)
             raise RuntimeError(f"llama-cli failed (exit {proc.returncode})")
 
-        return stdout.decode(encoding="utf-8", errors="replace").strip()
+        raw = stdout.decode(encoding="utf-8", errors="replace")
+        return self._clean_output(raw)
+
+    @staticmethod
+    def _clean_output(raw: str) -> str:
+        """Strip llama.cpp banner, spinner chars, and metadata from output."""
+        import re
+        # Remove ANSI escape sequences and backspace spinner chars
+        text = re.sub(r'[\x08]', '', raw)
+        text = re.sub(r'Loading model\.\.\.[|\\\-/\s]+', '', text)
+        # Remove the llama.cpp ASCII art banner
+        text = re.sub(r'▄.*?▀▀\s*▀▀', '', text, flags=re.DOTALL)
+        # Remove build/model/modalities info block
+        text = re.sub(r'build\s+:.*?(?=\n\n|\n>)', '', text, flags=re.DOTALL)
+        # Remove available commands block
+        text = re.sub(r'available commands:.*?(?=\n\n|\n>)', '', text, flags=re.DOTALL)
+        # Remove the echoed prompt (everything up to and including the last >)
+        if '>' in text:
+            parts = text.rsplit('>', 1)
+            if len(parts) == 2:
+                text = parts[1]
+        # Remove performance stats line
+        text = re.sub(r'\[\s*Prompt:.*?\]', '', text)
+        # Remove "Exiting..." line
+        text = re.sub(r'Exiting\.\.\.', '', text)
+        # Remove spinner artifacts
+        text = re.sub(r'[|/\\\-]{1,2}(?:\s*[|/\\\-])*', '', text)
+        # Clean up whitespace
+        text = re.sub(r'\n{3,}', '\n\n', text)
+        return text.strip()

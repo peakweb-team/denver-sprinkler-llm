@@ -13,17 +13,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     cmake g++ git make python3 python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Clone BitNet at pinned revision (v0.1, 2025-03-07)
-RUN git clone https://github.com/microsoft/BitNet.git /bitnet \
-    && cd /bitnet \
-    && git checkout 58c005d97fafab4cdce7844649e85e1e08f81842
+# Clone llama.cpp (official repo, supports GGUF inference)
+RUN git clone https://github.com/ggml-org/llama.cpp.git /llama.cpp
 
-# Build llama-cli
-RUN cd /bitnet \
+# Build llama-cli with shared libs (needed for proper linking)
+RUN cd /llama.cpp \
     && mkdir -p build \
     && cd build \
     && cmake .. -DCMAKE_BUILD_TYPE=Release \
-    && cmake --build . --config Release -j"$(nproc)"
+    && cmake --build . --target llama-cli --config Release -j"$(nproc)"
 
 # ---------------------------------------------------------------------------
 # Stage 2 — Runtime: Python + llama-cli + server code
@@ -35,8 +33,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the compiled llama-cli binary from builder
-COPY --from=builder /bitnet/build/bin/llama-cli /usr/local/bin/llama-cli
+COPY --from=builder /llama.cpp/build/bin/llama-cli /usr/local/bin/llama-cli
 RUN chmod +x /usr/local/bin/llama-cli
+
+# Copy all shared libraries from the build tree and update linker cache
+RUN --mount=from=builder,source=/llama.cpp/build,target=/tmp/llama-build \
+    find /tmp/llama-build -name '*.so*' -exec cp {} /usr/local/lib/ \; \
+    && ldconfig
 
 # Python dependencies
 WORKDIR /app
@@ -51,10 +54,10 @@ COPY server/start.sh /app/start.sh
 RUN chmod +x /app/start.sh
 
 # Defaults — override at runtime via env vars
-ENV MODEL_PATH=/models/ggml-model-i2_s.gguf
+ENV MODEL_PATH=/models/model-Q4_K_M.gguf
 ENV LLAMA_CLI_PATH=/usr/local/bin/llama-cli
 ENV S3_BUCKET_NAME=""
-ENV S3_MODEL_PREFIX="models/denver-sprinkler-3b-1bit"
+ENV S3_MODEL_PREFIX="models/denver-sprinkler-3b-gguf"
 
 EXPOSE 8000
 

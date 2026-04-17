@@ -27,9 +27,14 @@ output "iam_instance_profile_name" {
   value       = aws_iam_instance_profile.ec2_profile.name
 }
 
-output "training_spot_request_id" {
-  description = "ID of the training spot instance request (empty if not launched)"
-  value       = var.launch_training ? aws_spot_instance_request.training[0].id : ""
+output "training_instance_id" {
+  description = "ID of the training instance (empty if not launched)"
+  value       = var.launch_training ? aws_instance.training[0].id : ""
+}
+
+output "training_public_ip" {
+  description = "Public IP of the training instance (empty if not launched)"
+  value       = var.launch_training ? aws_instance.training[0].public_ip : ""
 }
 
 output "inference_instance_id" {

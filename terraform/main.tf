@@ -92,6 +92,19 @@ data "aws_ami" "ubuntu_2404" {
   }
 }
 
+# SSH key pair for instance access
+resource "aws_key_pair" "deploy" {
+  count      = var.ssh_key_name == "" ? 1 : 0
+  key_name   = "${var.project_name}-deploy"
+  public_key = var.ssh_public_key
+}
+
+locals {
+  ssh_key_name = var.ssh_key_name != "" ? var.ssh_key_name : (
+    length(aws_key_pair.deploy) > 0 ? aws_key_pair.deploy[0].key_name : null
+  )
+}
+
 # Current AWS account and region info
 data "aws_caller_identity" "current" {}
 data "aws_region" "current" {}
