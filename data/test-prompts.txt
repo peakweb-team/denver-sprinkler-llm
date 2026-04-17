@@ -1,0 +1,27 @@
+# Denver Sprinkler Chat CLI — Test Prompts
+# One prompt per line. Blank lines and lines starting with # are skipped.
+
+What services do you offer?
+How much does sprinkler repair cost?
+Do you install new sprinkler systems?
+Can you help with landscaping design?
+Do you offer snow removal services?
+What about fencing installation?
+
+# Location / service area questions
+Do you serve Aurora, Colorado?
+Are you available in Littleton?
+What areas of Denver do you cover?
+
+# Contact and hours
+What is your phone number?
+What are your business hours?
+Where are you located?
+Do you offer emergency services on weekends?
+
+# Technical / how-to questions
+How often should I water my lawn in summer?
+When should I winterize my sprinkler system?
+What are the signs of a broken sprinkler head?
+How do I know if my irrigation system has a leak?
+What type of grass grows best in Colorado?
